@@ -272,6 +272,15 @@ export async function renderTimelineFrame({
         );
         ctx.restore();
       }
+      // Draw stroke first (behind fill)
+      const strokeWidth = (text.strokeWidth ?? 0) * scaleX;
+      if (strokeWidth > 0 && text.strokeColor) {
+        ctx.strokeStyle = text.strokeColor;
+        ctx.lineWidth = strokeWidth;
+        ctx.lineJoin = "round";
+        ctx.miterLimit = 2;
+        ctx.strokeText(text.content, 0, 0);
+      }
       ctx.fillText(text.content, 0, 0);
       ctx.restore();
     }

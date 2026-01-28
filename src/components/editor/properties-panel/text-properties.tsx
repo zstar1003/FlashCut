@@ -47,6 +47,9 @@ export function TextProperties({
   const [xInput, setXInput] = useState(element.x.toString());
   const [yInput, setYInput] = useState(element.y.toString());
   const [rotationInput, setRotationInput] = useState(element.rotation.toString());
+  const [strokeWidthInput, setStrokeWidthInput] = useState(
+    (element.strokeWidth ?? 0).toString()
+  );
 
   // Sync local state when element changes (e.g., when switching between elements)
   useEffect(() => {
@@ -55,7 +58,8 @@ export function TextProperties({
     setXInput(element.x.toString());
     setYInput(element.y.toString());
     setRotationInput(element.rotation.toString());
-  }, [element.id, element.fontSize, element.opacity, element.x, element.y, element.rotation]);
+    setStrokeWidthInput((element.strokeWidth ?? 0).toString());
+  }, [element.id, element.fontSize, element.opacity, element.x, element.y, element.rotation, element.strokeWidth]);
 
   // Track the last selected color for toggling
   const lastSelectedColor = useRef("#000000");
@@ -156,6 +160,20 @@ export function TextProperties({
     const rotation = parseAndValidateNumber(rotationInput, -360, 360, element.rotation);
     setRotationInput(rotation.toString());
     updateTextElement(trackId, element.id, { rotation });
+  };
+
+  const handleStrokeWidthChange = (value: string) => {
+    setStrokeWidthInput(value);
+    if (value.trim() !== "") {
+      const strokeWidth = parseAndValidateNumber(value, 0, 20, element.strokeWidth ?? 0);
+      updateTextElement(trackId, element.id, { strokeWidth });
+    }
+  };
+
+  const handleStrokeWidthBlur = () => {
+    const strokeWidth = parseAndValidateNumber(strokeWidthInput, 0, 20, element.strokeWidth ?? 0);
+    setStrokeWidthInput(strokeWidth.toString());
+    updateTextElement(trackId, element.id, { strokeWidth });
   };
 
   // Update last selected color when a new color is picked
@@ -425,6 +443,54 @@ export function TextProperties({
                     }}
                     containerRef={containerRef}
                   />
+                </PropertyItemValue>
+              </PropertyItem>
+              <PropertyItem direction="column">
+                <PropertyItemLabel>描边颜色</PropertyItemLabel>
+                <PropertyItemValue>
+                  <ColorPicker
+                    value={uppercase(
+                      (element.strokeColor || "000000").replace("#", "")
+                    )}
+                    onChange={(color) => {
+                      updateTextElement(trackId, element.id, {
+                        strokeColor: `#${color}`,
+                      });
+                    }}
+                    containerRef={containerRef}
+                  />
+                </PropertyItemValue>
+              </PropertyItem>
+              <PropertyItem direction="column">
+                <PropertyItemLabel>描边粗细</PropertyItemLabel>
+                <PropertyItemValue>
+                  <div className="flex items-center gap-2">
+                    <Slider
+                      value={[element.strokeWidth ?? 0]}
+                      min={0}
+                      max={20}
+                      step={1}
+                      onValueChange={([value]) => {
+                        updateTextElement(trackId, element.id, {
+                          strokeWidth: value,
+                        });
+                        setStrokeWidthInput(value.toString());
+                      }}
+                      className="w-full"
+                    />
+                    <Input
+                      type="number"
+                      value={strokeWidthInput}
+                      min={0}
+                      max={20}
+                      onChange={(e) => handleStrokeWidthChange(e.target.value)}
+                      onBlur={handleStrokeWidthBlur}
+                      className="w-12 px-2 !text-xs h-7 rounded-sm text-center bg-panel-accent
+               [appearance:textfield]
+               [&::-webkit-outer-spin-button]:appearance-none
+               [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </div>
                 </PropertyItemValue>
               </PropertyItem>
               <PropertyItem direction="column">

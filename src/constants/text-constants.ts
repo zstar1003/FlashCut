@@ -20,6 +20,8 @@ export const DEFAULT_TEXT_ELEMENT: Omit<
   y: 0,
   rotation: 0,
   opacity: 1,
+  strokeColor: "#000000",
+  strokeWidth: 0,
   duration: TIMELINE_CONSTANTS.DEFAULT_TEXT_DURATION,
   startTime: 0,
   trimStart: 0,

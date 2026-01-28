@@ -37,6 +37,8 @@ export interface TextElement extends BaseTimelineElement {
   y: number; // Position relative to canvas center
   rotation: number; // in degrees
   opacity: number; // 0-1
+  strokeColor: string; // Stroke/outline color
+  strokeWidth: number; // Stroke width in pixels
 }
 
 // Typed timeline elements

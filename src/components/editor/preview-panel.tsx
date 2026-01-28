@@ -1,7 +1,7 @@
 "use client";
 
 import { useTimelineStore } from "@/stores/timeline-store";
-import { TimelineElement, TimelineTrack } from "@/types/timeline";
+import { TimelineElement, TimelineTrack, TextElement } from "@/types/timeline";
 import { useMediaStore } from "@/stores/media-store";
 import { MediaFile } from "@/types/media";
 import { usePlaybackStore } from "@/stores/playback-store";
@@ -619,8 +619,52 @@ export function PreviewPanel() {
   // Render blur background layer (handled by canvas now)
   const renderBlurBackground = () => null;
 
-  // Render an element (canvas handles visuals now). Audio playback to be implemented via Web Audio.
-  const renderElement = (_elementData: ActiveElement) => null;
+  // Render an element overlay for drag interactions (canvas handles visuals)
+  const renderElement = (elementData: ActiveElement) => {
+    const { element, track } = elementData;
+
+    // Only render draggable overlay for text elements
+    if (element.type !== "text") return null;
+
+    const textElement = element as TextElement;
+    const scaleRatio = previewDimensions.width / canvasSize.width;
+
+    // Calculate position based on element's x, y (relative to center)
+    const centerX = previewDimensions.width / 2;
+    const centerY = previewDimensions.height / 2;
+
+    // Use drag state position if currently dragging this element
+    const currentX = dragState.isDragging && dragState.elementId === element.id
+      ? dragState.currentX
+      : textElement.x;
+    const currentY = dragState.isDragging && dragState.elementId === element.id
+      ? dragState.currentY
+      : textElement.y;
+
+    const left = centerX + currentX * scaleRatio;
+    const top = centerY + currentY * scaleRatio;
+
+    // Estimate text size for the overlay
+    const fontSize = textElement.fontSize * scaleRatio;
+    const estimatedWidth = textElement.content.length * fontSize * 0.6;
+    const estimatedHeight = fontSize * 1.2;
+
+    return (
+      <div
+        key={element.id}
+        className="absolute cursor-grab active:cursor-grabbing"
+        style={{
+          left: left - estimatedWidth / 2,
+          top: top - estimatedHeight / 2,
+          width: estimatedWidth,
+          height: estimatedHeight,
+          // Debug: uncomment to see overlay
+          // backgroundColor: 'rgba(255,0,0,0.2)',
+        }}
+        onMouseDown={(e) => handleTextMouseDown(e, textElement, track.id)}
+      />
+    );
+  };
 
   return (
     <>
