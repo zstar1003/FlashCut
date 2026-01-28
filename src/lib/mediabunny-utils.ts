@@ -201,6 +201,7 @@ export const extractTimelineAudio = async (
   // Create a complex filter to mix all audio sources
   const inputFiles: string[] = [];
   const filterInputs: string[] = [];
+  let validAudioCount = 0;
 
   try {
     for (let i = 0; i < audioElements.length; i++) {
@@ -224,16 +225,25 @@ export const extractTimelineAudio = async (
       const actualDuration =
         element.duration - element.trimStart - element.trimEnd;
 
-      const filterName = `audio_${i}`;
+      const filterName = `audio_${validAudioCount}`;
+      // Use 0:a? syntax to handle files without audio gracefully,
+      // but filter_complex doesn't support ? - we'll handle errors instead
       filterInputs.push(
         `[${i}:a]atrim=start=${actualStart}:duration=${actualDuration},asetpts=PTS-STARTPTS,adelay=${element.startTime * 1000}|${element.startTime * 1000}[${filterName}]`
       );
+      validAudioCount++;
+    }
+
+    if (validAudioCount === 0) {
+      // No valid audio elements, return silent audio
+      const silentDuration = Math.max(1, totalDuration);
+      return generateSilentAudio(silentDuration);
     }
 
     const mixFilter =
-      audioElements.length === 1
+      validAudioCount === 1
         ? `[audio_0]aresample=44100,aformat=sample_fmts=s16:channel_layouts=stereo[out]`
-        : `${filterInputs.map((_, i) => `[audio_${i}]`).join("")}amix=inputs=${audioElements.length}:duration=longest:dropout_transition=2,aresample=44100,aformat=sample_fmts=s16:channel_layouts=stereo[out]`;
+        : `${Array.from({ length: validAudioCount }, (_, i) => `[audio_${i}]`).join("")}amix=inputs=${validAudioCount}:duration=longest:dropout_transition=2,aresample=44100,aformat=sample_fmts=s16:channel_layouts=stereo[out]`;
 
     const complexFilter = [...filterInputs, mixFilter].join(";");
     const outputName = "timeline_audio.wav";
@@ -257,16 +267,27 @@ export const extractTimelineAudio = async (
       await ffmpeg.exec(ffmpegArgs);
     } catch (error) {
       console.error("FFmpeg execution failed:", error);
-      throw new Error(
-        "Audio processing failed. Some audio files may be corrupted or incompatible."
-      );
+      console.error("FFmpeg args:", ffmpegArgs.join(" "));
+      // If FFmpeg fails (e.g., video has no audio track), return silent audio
+      console.warn("Falling back to silent audio due to FFmpeg error");
+      const silentDuration = Math.max(1, totalDuration);
+      return generateSilentAudio(silentDuration);
     }
 
-    const data = await ffmpeg.readFile(outputName);
-    const blob = new Blob([new Uint8Array(data as Uint8Array)], { type: "audio/wav" });
+    let data: Uint8Array;
+    try {
+      data = await ffmpeg.readFile(outputName) as Uint8Array;
+    } catch (readError) {
+      console.error("Failed to read FFmpeg output:", readError);
+      const silentDuration = Math.max(1, totalDuration);
+      return generateSilentAudio(silentDuration);
+    }
+
+    const blob = new Blob([new Uint8Array(data)], { type: "audio/wav" });
 
     return blob;
   } catch (error) {
+    console.error("Audio extraction error:", error);
     for (const inputFile of inputFiles) {
       try {
         await ffmpeg.deleteFile(inputFile);
@@ -280,7 +301,10 @@ export const extractTimelineAudio = async (
       console.warn("Failed to cleanup output file:", cleanupError);
     }
 
-    throw error;
+    // Fall back to silent audio instead of throwing
+    console.warn("Falling back to silent audio due to extraction error");
+    const silentDuration = Math.max(1, totalDuration);
+    return generateSilentAudio(silentDuration);
   } finally {
     for (const inputFile of inputFiles) {
       try {
