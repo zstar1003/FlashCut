@@ -60,24 +60,28 @@ const nextConfig: NextConfig = {
 
     return config;
   },
-  // 允许跨域加载 ONNX 模型
-  async headers() {
-    return [
-      {
-        source: "/:path*",
-        headers: [
-          {
-            key: "Cross-Origin-Opener-Policy",
-            value: "same-origin",
-          },
-          {
-            key: "Cross-Origin-Embedder-Policy",
-            value: "require-corp",
-          },
-        ],
-      },
-    ];
-  },
+  // 允许跨域加载 ONNX 模型（仅非静态导出时有效）
+  ...(isGitHubPages
+    ? {}
+    : {
+        async headers() {
+          return [
+            {
+              source: "/:path*",
+              headers: [
+                {
+                  key: "Cross-Origin-Opener-Policy",
+                  value: "same-origin",
+                },
+                {
+                  key: "Cross-Origin-Embedder-Policy",
+                  value: "require-corp",
+                },
+              ],
+            },
+          ];
+        },
+      }),
 };
 
 export default nextConfig;
