@@ -485,7 +485,7 @@ export function PreviewPanel() {
     const draw = async () => {
       const canvas = canvasRef.current;
       if (!canvas) return;
-      const mainCtx = canvas.getContext("2d");
+      const mainCtx = canvas.getContext("2d", { willReadFrequently: true });
       if (!mainCtx) return;
 
       // Set canvas internal resolution to avoid blurry scaling
@@ -575,8 +575,8 @@ export function PreviewPanel() {
         | HTMLCanvasElement
         | OffscreenCanvas;
       const offCtx = (offscreenCanvas as HTMLCanvasElement).getContext
-        ? (offscreenCanvas as HTMLCanvasElement).getContext("2d")
-        : (offscreenCanvas as OffscreenCanvas).getContext("2d");
+        ? (offscreenCanvas as HTMLCanvasElement).getContext("2d", { willReadFrequently: true })
+        : (offscreenCanvas as OffscreenCanvas).getContext("2d", { willReadFrequently: true });
       if (!offCtx) return;
 
       await renderTimelineFrame({

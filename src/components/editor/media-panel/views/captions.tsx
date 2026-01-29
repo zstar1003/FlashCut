@@ -136,7 +136,7 @@ export function Captions() {
       const audioUrl = URL.createObjectURL(audioBlob);
       console.log("Audio URL created:", audioUrl);
 
-      setProcessingStep("正在转录...");
+      setProcessingStep("正在识别语音（这可能需要几分钟）...");
 
       // Always pass the selected language explicitly for better accuracy
       console.log("Transcription language:", selectedCountry);
@@ -154,6 +154,8 @@ export function Captions() {
       URL.revokeObjectURL(audioUrl);
 
       console.log("Transcription completed:", result);
+
+      setProcessingStep("正在生成字幕轨道...");
 
       const shortCaptions: Array<{
         text: string;
