@@ -38,3 +38,4 @@ apps/bg-remover/env
 apps/web/.next/
 out/
 apps/web/out/
+.DS_Store

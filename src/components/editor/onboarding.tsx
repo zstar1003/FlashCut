@@ -28,11 +28,11 @@ export function Onboarding() {
   const getStepTitle = () => {
     switch (step) {
       case 0:
-        return "欢迎使用 OpenCut！";
+        return "欢迎使用速剪！";
       case 1:
         return "开始使用";
       default:
-        return "OpenCut";
+        return "速剪";
     }
   };
 
@@ -42,7 +42,7 @@ export function Onboarding() {
         return (
           <div className="space-y-5">
             <div className="space-y-3">
-              <Title title="欢迎使用 OpenCut！" />
+              <Title title="欢迎使用速剪！" />
               <Description>
                 一款免费的开源视频编辑器，完全在浏览器中运行。无需服务器处理。
               </Description>
