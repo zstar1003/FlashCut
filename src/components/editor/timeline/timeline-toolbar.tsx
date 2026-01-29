@@ -1,7 +1,6 @@
 import { usePlaybackStore } from "@/stores/playback-store";
 import { useProjectStore } from "@/stores/project-store";
 import { useTimelineStore } from "@/stores/timeline-store";
-import { useSceneStore } from "@/stores/scene-store";
 import { toast } from "sonner";
 import {
   TooltipProvider,
@@ -21,25 +20,16 @@ import {
   ZoomIn,
   Copy,
   Trash2,
-  Snowflake,
   ArrowLeftToLine,
   ArrowRightToLine,
   SplitSquareHorizontal,
   Scissors,
-  LayersIcon,
 } from "lucide-react";
-import {
-  SplitButton,
-  SplitButtonLeft,
-  SplitButtonRight,
-  SplitButtonSeparator,
-} from "@/components/ui/split-button";
 import { Slider } from "@/components/ui/slider";
 import { DEFAULT_FPS } from "@/stores/project-store";
 import { formatTimeCode } from "@/lib/time";
 import { TIMELINE_CONSTANTS } from "@/constants/timeline-constants";
 import { EditableTimecode } from "@/components/ui/editable-timecode";
-import { ScenesView } from "../scenes-view";
 
 export function TimelineToolbar({
   zoomLevel,
@@ -66,7 +56,6 @@ export function TimelineToolbar({
   } = useTimelineStore();
   const { currentTime, duration, isPlaying, toggle, seek } = usePlaybackStore();
   const { toggleBookmark, isBookmarked, activeProject } = useProjectStore();
-  const { scenes, currentScene } = useSceneStore();
 
   const handleSplitSelected = () => {
     splitSelected(currentTime);
@@ -93,10 +82,6 @@ export function TimelineToolbar({
       }
     });
     clearSelectedElements();
-  };
-
-  const handleFreezeSelected = () => {
-    toast.info("冻结帧功能即将推出！");
   };
 
   const handleSplitAndKeepLeft = () => {
@@ -302,14 +287,6 @@ export function TimelineToolbar({
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="text" size="icon" onClick={handleFreezeSelected}>
-                <Snowflake className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>冻结帧 (F)</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
               <Button variant="text" size="icon" onClick={handleDeleteSelected}>
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -330,17 +307,6 @@ export function TimelineToolbar({
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-      </div>
-      <div>
-        <SplitButton className="border border-foreground/10">
-          <SplitButtonLeft>{currentScene?.name || "无场景"}</SplitButtonLeft>
-          <SplitButtonSeparator />
-          <ScenesView>
-            <SplitButtonRight disabled={scenes.length === 1} onClick={() => {}}>
-              <LayersIcon />
-            </SplitButtonRight>
-          </ScenesView>
-        </SplitButton>
       </div>
       <div className="flex items-center gap-1">
         <TooltipProvider delayDuration={500}>

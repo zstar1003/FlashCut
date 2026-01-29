@@ -2,16 +2,6 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { CanvasPreset } from "@/types/editor";
 
-export type PlatformLayout = "tiktok";
-
-export const PLATFORM_LAYOUTS: Record<PlatformLayout, string> = {
-  tiktok: "TikTok",
-};
-
-interface LayoutGuideSettings {
-  platform: PlatformLayout | null;
-}
-
 interface EditorState {
   // Loading states
   isInitializing: boolean;
@@ -19,14 +9,11 @@ interface EditorState {
 
   // Editor UI settings
   canvasPresets: CanvasPreset[];
-  layoutGuide: LayoutGuideSettings;
 
   // Actions
   setInitializing: (loading: boolean) => void;
   setPanelsReady: (ready: boolean) => void;
   initializeApp: () => Promise<void>;
-  setLayoutGuide: (settings: Partial<LayoutGuideSettings>) => void;
-  toggleLayoutGuide: (platform: PlatformLayout) => void;
 }
 
 const DEFAULT_CANVAS_PRESETS: CanvasPreset[] = [
@@ -43,9 +30,6 @@ export const useEditorStore = create<EditorState>()(
       isInitializing: true,
       isPanelsReady: false,
       canvasPresets: DEFAULT_CANVAS_PRESETS,
-      layoutGuide: {
-        platform: null,
-      },
 
       // Actions
       setInitializing: (loading) => {
@@ -63,29 +47,9 @@ export const useEditorStore = create<EditorState>()(
         set({ isPanelsReady: true, isInitializing: false });
         console.log("Video editor ready");
       },
-
-      setLayoutGuide: (settings) => {
-        set((state) => ({
-          layoutGuide: {
-            ...state.layoutGuide,
-            ...settings,
-          },
-        }));
-      },
-
-      toggleLayoutGuide: (platform) => {
-        set((state) => ({
-          layoutGuide: {
-            platform: state.layoutGuide.platform === platform ? null : platform,
-          },
-        }));
-      },
     }),
     {
       name: "editor-settings",
-      partialize: (state) => ({
-        layoutGuide: state.layoutGuide,
-      }),
     }
   )
 );
