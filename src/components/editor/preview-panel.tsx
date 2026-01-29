@@ -70,8 +70,10 @@ export function PreviewPanel() {
   });
 
   useEffect(() => {
-    const updatePreviewSize = () => {
-      if (!containerRef.current) return;
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const computeSize = (): { width: number; height: number } | null => {
+      if (!containerRef.current) return null;
 
       let availableWidth, availableHeight;
 
@@ -82,6 +84,8 @@ export function PreviewPanel() {
         availableHeight = window.innerHeight - controlsHeight - marginSpace;
       } else {
         const container = containerRef.current.getBoundingClientRect();
+        if (container.width === 0 || container.height === 0) return null;
+
         const computedStyle = getComputedStyle(containerRef.current);
         const paddingTop = parseFloat(computedStyle.paddingTop);
         const paddingBottom = parseFloat(computedStyle.paddingBottom);
@@ -102,6 +106,8 @@ export function PreviewPanel() {
           (toolbarHeight > 0 ? gap : 0);
       }
 
+      if (availableWidth <= 0 || availableHeight <= 0) return null;
+
       const targetRatio = canvasSize.width / canvasSize.height;
       const containerRatio = availableWidth / availableHeight;
       let width, height;
@@ -114,22 +120,39 @@ export function PreviewPanel() {
         height = width / targetRatio;
       }
 
-      setPreviewDimensions({ width, height });
+      return { width, height };
     };
 
-    updatePreviewSize();
-    const resizeObserver = new ResizeObserver(updatePreviewSize);
+    const applySize = () => {
+      const size = computeSize();
+      if (size) setPreviewDimensions(size);
+    };
+
+    // Debounced handler for ResizeObserver to avoid intermediate sizes
+    const debouncedApplySize = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applySize, 50);
+    };
+
+    // Initial: wait for layout to settle after isExpanded changes
+    const rafId = requestAnimationFrame(() => {
+      requestAnimationFrame(applySize);
+    });
+
+    const resizeObserver = new ResizeObserver(debouncedApplySize);
     if (containerRef.current) {
       resizeObserver.observe(containerRef.current);
     }
     if (isExpanded) {
-      window.addEventListener("resize", updatePreviewSize);
+      window.addEventListener("resize", debouncedApplySize);
     }
 
     return () => {
+      cancelAnimationFrame(rafId);
+      if (debounceTimer) clearTimeout(debounceTimer);
       resizeObserver.disconnect();
       if (isExpanded) {
-        window.removeEventListener("resize", updatePreviewSize);
+        window.removeEventListener("resize", debouncedApplySize);
       }
     };
   }, [canvasSize.width, canvasSize.height, isExpanded]);
