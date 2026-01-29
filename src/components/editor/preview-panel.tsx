@@ -244,8 +244,10 @@ export function PreviewPanel() {
   };
 
   const toggleExpanded = useCallback(() => {
+    invalidateCache();
+    lastFrameTimeRef.current = -Infinity;
     setIsExpanded((prev) => !prev);
-  }, []);
+  }, [invalidateCache]);
 
   const hasAnyElements = tracks.some((track) => track.elements.length > 0);
   const shouldRenderPreview = hasAnyElements || activeProject?.backgroundType;
@@ -662,77 +664,77 @@ export function PreviewPanel() {
   };
 
   return (
-    <>
-      <div className="h-full w-full flex flex-col min-h-0 min-w-0 bg-panel rounded-sm relative">
-        <div
-          ref={containerRef}
-          className="flex-1 flex flex-col items-center justify-center min-h-0 min-w-0"
-        >
-          <div className="flex-1" />
-          {shouldRenderPreview ? (
-            <div
-              ref={previewRef}
-              className="relative overflow-hidden border"
+    <div
+      className={cn(
+        "flex flex-col min-h-0 min-w-0 bg-panel rounded-sm relative",
+        isExpanded
+          ? "fixed inset-0 z-[9999] bg-background"
+          : "h-full w-full"
+      )}
+    >
+      <div
+        ref={containerRef}
+        className="flex-1 flex flex-col items-center justify-center min-h-0 min-w-0"
+      >
+        <div className="flex-1" />
+        {shouldRenderPreview ? (
+          <div
+            ref={previewRef}
+            className="relative overflow-hidden border"
+            style={{
+              width: previewDimensions.width,
+              height: previewDimensions.height,
+              background:
+                activeProject?.backgroundType === "blur"
+                  ? "transparent"
+                  : activeProject?.backgroundColor || "#000000",
+            }}
+          >
+            {renderBlurBackground()}
+            <canvas
+              ref={canvasRef}
               style={{
+                position: "absolute",
+                left: 0,
+                top: 0,
                 width: previewDimensions.width,
                 height: previewDimensions.height,
-                background:
-                  activeProject?.backgroundType === "blur"
-                    ? "transparent"
-                    : activeProject?.backgroundColor || "#000000",
               }}
-            >
-              {renderBlurBackground()}
-              <canvas
-                ref={canvasRef}
-                style={{
-                  position: "absolute",
-                  left: 0,
-                  top: 0,
-                  width: previewDimensions.width,
-                  height: previewDimensions.height,
-                }}
-                aria-label="Video preview canvas"
-              />
-              {activeElements.length === 0 ? (
-                <></>
-              ) : (
-                activeElements.map((elementData) => renderElement(elementData))
-              )}
-            </div>
-          ) : null}
+              aria-label="Video preview canvas"
+            />
+            {activeElements.length === 0 ? (
+              <></>
+            ) : (
+              activeElements.map((elementData) => renderElement(elementData))
+            )}
+          </div>
+        ) : null}
 
-          <div className="flex-1" />
+        <div className="flex-1" />
 
+        {isExpanded ? (
+          <div className="p-4">
+            <FullscreenToolbar
+              hasAnyElements={hasAnyElements}
+              onToggleExpanded={toggleExpanded}
+              currentTime={currentTime}
+              setCurrentTime={setCurrentTime}
+              toggle={toggle}
+              getTotalDuration={getTotalDuration}
+            />
+          </div>
+        ) : (
           <PreviewToolbar
             hasAnyElements={hasAnyElements}
             onToggleExpanded={toggleExpanded}
-            isExpanded={isExpanded}
             currentTime={currentTime}
             setCurrentTime={setCurrentTime}
             toggle={toggle}
             getTotalDuration={getTotalDuration}
           />
-        </div>
+        )}
       </div>
-
-      {isExpanded && (
-        <FullscreenPreview
-          previewDimensions={previewDimensions}
-          activeProject={activeProject}
-          renderBlurBackground={renderBlurBackground}
-          activeElements={activeElements}
-          renderElement={renderElement}
-          blurBackgroundElements={blurBackgroundElements}
-          hasAnyElements={hasAnyElements}
-          toggleExpanded={toggleExpanded}
-          currentTime={currentTime}
-          setCurrentTime={setCurrentTime}
-          toggle={toggle}
-          getTotalDuration={getTotalDuration}
-        />
-      )}
-    </>
+    </div>
   );
 }
 
@@ -903,77 +905,9 @@ function FullscreenToolbar({
   );
 }
 
-function FullscreenPreview({
-  previewDimensions,
-  activeProject,
-  renderBlurBackground,
-  activeElements,
-  renderElement,
-  blurBackgroundElements,
-  hasAnyElements,
-  toggleExpanded,
-  currentTime,
-  setCurrentTime,
-  toggle,
-  getTotalDuration,
-}: {
-  previewDimensions: { width: number; height: number };
-  activeProject: any;
-  renderBlurBackground: () => React.ReactNode;
-  activeElements: ActiveElement[];
-  renderElement: (elementData: ActiveElement, index: number) => React.ReactNode;
-  blurBackgroundElements: ActiveElement[];
-  hasAnyElements: boolean;
-  toggleExpanded: () => void;
-  currentTime: number;
-  setCurrentTime: (time: number) => void;
-  toggle: () => void;
-  getTotalDuration: () => number;
-}) {
-  return (
-    <div className="fixed inset-0 z-9999 flex flex-col">
-      <div className="flex-1 flex items-center justify-center bg-background">
-        <div
-          className="relative overflow-hidden border border-border m-3"
-          style={{
-            width: previewDimensions.width,
-            height: previewDimensions.height,
-            background:
-              activeProject?.backgroundType === "blur"
-                ? "#1a1a1a"
-                : activeProject?.backgroundColor || "#1a1a1a",
-          }}
-        >
-          {renderBlurBackground()}
-          {activeElements.length === 0 ? (
-            <div className="absolute inset-0 flex items-center justify-center text-white/60">
-              当前时间没有元素
-            </div>
-          ) : (
-            activeElements.map((elementData, index) =>
-              renderElement(elementData, index)
-            )
-          )}
-        </div>
-      </div>
-      <div className="p-4 bg-background">
-        <FullscreenToolbar
-          hasAnyElements={hasAnyElements}
-          onToggleExpanded={toggleExpanded}
-          currentTime={currentTime}
-          setCurrentTime={setCurrentTime}
-          toggle={toggle}
-          getTotalDuration={getTotalDuration}
-        />
-      </div>
-    </div>
-  );
-}
-
 function PreviewToolbar({
   hasAnyElements,
   onToggleExpanded,
-  isExpanded,
   currentTime,
   setCurrentTime,
   toggle,
@@ -981,28 +915,12 @@ function PreviewToolbar({
 }: {
   hasAnyElements: boolean;
   onToggleExpanded: () => void;
-  isExpanded: boolean;
   currentTime: number;
   setCurrentTime: (time: number) => void;
   toggle: () => void;
   getTotalDuration: () => number;
 }) {
   const { isPlaying } = usePlaybackStore();
-
-  if (isExpanded) {
-    return (
-      <FullscreenToolbar
-        {...{
-          hasAnyElements,
-          onToggleExpanded,
-          currentTime,
-          setCurrentTime,
-          toggle,
-          getTotalDuration,
-        }}
-      />
-    );
-  }
 
   return (
     <div
