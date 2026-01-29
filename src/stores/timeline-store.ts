@@ -233,6 +233,30 @@ interface TimelineStore {
         | "y"
         | "rotation"
         | "opacity"
+        | "strokeColor"
+        | "strokeWidth"
+      >
+    >
+  ) => void;
+  updateTrackTextStyles: (
+    trackId: string,
+    updates: Partial<
+      Pick<
+        TextElement,
+        | "fontSize"
+        | "fontFamily"
+        | "color"
+        | "backgroundColor"
+        | "textAlign"
+        | "fontWeight"
+        | "fontStyle"
+        | "textDecoration"
+        | "strokeColor"
+        | "strokeWidth"
+        | "x"
+        | "y"
+        | "rotation"
+        | "opacity"
       >
     >
   ) => void;
@@ -880,6 +904,24 @@ export const useTimelineStore = create<TimelineStore>((set, get) => {
                 ...track,
                 elements: track.elements.map((element) =>
                   element.id === elementId && element.type === "text"
+                    ? { ...element, ...updates }
+                    : element
+                ),
+              }
+            : track
+        )
+      );
+    },
+
+    updateTrackTextStyles: (trackId, updates) => {
+      get().pushHistory();
+      updateTracksAndSave(
+        get()._tracks.map((track) =>
+          track.id === trackId
+            ? {
+                ...track,
+                elements: track.elements.map((element) =>
+                  element.type === "text"
                     ? { ...element, ...updates }
                     : element
                 ),
@@ -1885,5 +1927,10 @@ function buildTextElement(
         : DEFAULT_TEXT_ELEMENT.rotation,
     opacity:
       typeof t.opacity === "number" ? t.opacity : DEFAULT_TEXT_ELEMENT.opacity,
+    strokeColor: t.strokeColor ?? DEFAULT_TEXT_ELEMENT.strokeColor,
+    strokeWidth:
+      typeof t.strokeWidth === "number"
+        ? t.strokeWidth
+        : DEFAULT_TEXT_ELEMENT.strokeWidth,
   };
 }

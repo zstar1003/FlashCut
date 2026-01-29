@@ -34,8 +34,33 @@ export function TextProperties({
   element: TextElement;
   trackId: string;
 }) {
-  const { updateTextElement } = useTimelineStore();
+  const { updateTextElement, updateTrackTextStyles, tracks } = useTimelineStore();
   const { activeTab, setActiveTab } = useTextPropertiesStore();
+
+  // Check if current track has multiple text elements (for batch update)
+  const currentTrack = tracks.find((t) => t.id === trackId);
+  const trackTextCount = currentTrack
+    ? currentTrack.elements.filter((e) => e.type === "text").length
+    : 0;
+
+  const handleApplyToAll = () => {
+    updateTrackTextStyles(trackId, {
+      fontSize: element.fontSize,
+      fontFamily: element.fontFamily,
+      color: element.color,
+      backgroundColor: element.backgroundColor,
+      textAlign: element.textAlign,
+      fontWeight: element.fontWeight,
+      fontStyle: element.fontStyle,
+      textDecoration: element.textDecoration,
+      strokeColor: element.strokeColor,
+      strokeWidth: element.strokeWidth,
+      x: element.x,
+      y: element.y,
+      rotation: element.rotation,
+      opacity: element.opacity,
+    });
+  };
   const containerRef = useRef<HTMLDivElement>(null);
   // Local state for input values to allow temporary empty/invalid states
   const [fontSizeInput, setFontSizeInput] = useState(
@@ -573,6 +598,16 @@ export function TextProperties({
                   </div>
                 </PropertyItemValue>
               </PropertyItem>
+              {trackTextCount > 1 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={handleApplyToAll}
+                >
+                  应用样式到轨道所有字幕 ({trackTextCount})
+                </Button>
+              )}
             </div>
           ),
       }))}

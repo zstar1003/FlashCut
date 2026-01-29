@@ -9,6 +9,7 @@ import { DEFAULT_TEXT_ELEMENT } from "@/constants/text-constants";
 import { Loader2, Download, Cpu } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { TextElement } from "@/types/timeline";
+import { useProjectStore } from "@/stores/project-store";
 
 export const languages: Language[] = [
   { code: "chinese", name: "中文", flag: "CN" },
@@ -39,6 +40,7 @@ export function Captions() {
   const [isLoadingModel, setIsLoadingModel] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const { insertTrackAt, addElementToTrack } = useTimelineStore();
+  const activeProject = useProjectStore((s) => s.activeProject);
 
   // Use whisper-small - medium is too large for browser memory
   const modelId = "Xenova/whisper-small";
@@ -221,6 +223,11 @@ export function Captions() {
       // Create a single track for all captions
       const captionTrackId = insertTrackAt("text", 0);
 
+      // Calculate y position for bottom center (standard subtitle position)
+      const captionY = activeProject?.canvasSize?.height
+        ? activeProject.canvasSize.height * 0.35 // ~80% from top
+        : 300; // Default for 1080p canvas
+
       // Add all caption elements to the same track
       for (let index = 0; index < shortCaptions.length; index++) {
         const caption = shortCaptions[index];
@@ -232,6 +239,7 @@ export function Captions() {
           startTime: caption.startTime,
           fontSize: 65,
           fontWeight: "bold",
+          y: captionY,
         } as TextElement);
       }
 
